@@ -1,16 +1,16 @@
 {
 	"name": "@markbattistella/docsify-autoheaders-docs",
-	"version": "4.1.0",
+	"version": "4.1.1",
 	"description": "Documentation for docsify-autoHeaders",
 	"main": "inhex.html",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/markbattistella/docsify-autoHeaders-docs.git"
+		"url": "git+https://github.com/markbattistella/docsify-autoHeaders.git"
 	},
 	"author": "Mark Battistella",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/markbattistella/docsify-autoHeaders-docs/issues"
+		"url": "https://github.com/markbattistella/docsify-autoHeaders/issues"
 	},
 	"homepage": "https://markbattistella.github.io/docsify-charty-docs/",
 	"keywords": [
@@ -22,9 +22,5 @@
 	"scripts": {
 		"launch": "docsify serve . -o",
 		"update": "ncu -u && npm update && npm install"
-	},
-	"dependencies": {
-		"docsify": "^4.12.1",
-		"docsify-tabs": "^1.5.2"
 	}
 }
