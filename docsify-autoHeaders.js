@@ -14,91 +14,100 @@
 
 // MARK: - default values
 const docsifyAutoHeaders = {
-        separator:  '',
-        levels:     '',
-        scope:      '',
-        debug:      false
-    },
+    separator:  '',
+    levels:     '',
+    scope:      '',
+    debug:      false
+},
 
-    // -- list of errors and warnings
-    defaultErrors = {
-        configNotSet:       'ERROR: config settings not set',
-        headingLevelOrder:  'ERROR: heading start level cannot be greater than finish level',
-        headingLevelRange:  'ERROR: heading levels need to be between 1-6',
-        invalidScope:       'ERROR: the "scope" entry is not valid',
-        invalidStartValue:  'ERROR: the "start" number is empty or null',
-        nonNumericValue:    'ERROR: the values provided are not numeric',
-        negativeNumbers:    'ERROR: the values are not positive integers'
-    },
+// -- list of errors and warnings
+defaultErrors = {
+    configNotSet:       'AutoHeaders: config settings not set',
+    headingLevelOrder:  'AutoHeaders: heading start level cannot be greater than finish level',
+    headingLevelRange:  'AutoHeaders: heading levels need to be between 1-6',
+    invalidScope:       'AutoHeaders: the "scope" entry is not valid',
+    invalidSidebar:       'AutoHeaders: the "scope" sidebar entry is not a boolean',
+    invalidStartValue:  'AutoHeaders: the "start" number is empty or null',
+    nonNumericValue:    'AutoHeaders: the values provided are not numeric',
+    negativeNumbers:    'AutoHeaders: the values are not positive integers'
+},
 
-    // update the default header values
-    setAutoHeadersOptions = ( docsifyAutoHeaders ) => {
+// update the default header values
+setAutoHeadersOptions = ( docsifyAutoHeaders ) => {
 
-        // check for required config settings
-        // -- need separator
-        // -- need levels
-        // -- need scope
-        if(
-            !docsifyAutoHeaders.separator   ||
-            !docsifyAutoHeaders.levels      ||
-            !docsifyAutoHeaders.scope
-        ) {
-            return console.warn( defaultErrors.configNotSet );
-        }
+    // check for required config settings
+    // -- need separator
+    // -- need levels
+    // -- need scope
+    if(
+        !docsifyAutoHeaders.separator   ||
+        !docsifyAutoHeaders.levels      ||
+        !docsifyAutoHeaders.scope
+    ) {
+        return console.error( defaultErrors.configNotSet );
+    }
 
-        // set some defaults
-        let separator;
+    // set some defaults
+    let separator;
 
-        // what separator are we using
-        switch( docsifyAutoHeaders.separator ) {
+    // what separator are we using
+    switch( docsifyAutoHeaders.separator ) {
 
-            case 'decimal':
-            case '.':
-            case 'dot':
-                separator = '.';
-                break;
+        case 'decimal':
+        case '.':
+        case 'dot':
+            separator = '.';
+            break;
 
-            case 'dash':
-            case '-':
-            case 'hyphen':
-                separator = '-';
-                break;
+        case 'dash':
+        case '-':
+        case 'hyphen':
+            separator = '-';
+            break;
 
-            case 'bracket':
-            case ')':
-            case 'parenthesis':
-                separator = ')';
-                break;
+        case 'bracket':
+        case ')':
+        case 'parenthesis':
+            separator = ')';
+            break;
 
-            default:
-                separator = docsifyAutoHeaders.separator;
-                break;
-        }
+        default:
+            separator = docsifyAutoHeaders.separator;
+            break;
+    }
 
-        // get other settings
-        let levels = (
-            docsifyAutoHeaders.levels ?
-                docsifyAutoHeaders.levels : 6
-        );
+    // get other settings
+    // -- how many levels are we working with
+    let levels = (
+        docsifyAutoHeaders.levels ?
+            docsifyAutoHeaders.levels : 6
+    );
 
-        let scope = (
-            docsifyAutoHeaders.scope ?
-                docsifyAutoHeaders.scope : "main"
-        );
+    // -- what is the set scope
+    let scope = (
+        docsifyAutoHeaders.scope ?
+            docsifyAutoHeaders.scope : "main"
+    );
 
-        let debug = (
-            docsifyAutoHeaders.debug === true ?
-                true : false
-        );
+    // -- are we outputting to console
+    let debug = (
+        docsifyAutoHeaders.debug === true ?
+            true : false
+    );
 
-        // return the array
-        return {
-            separator: separator,
-            levels: levels,
-            scope: scope,
-            debug: debug
-        }
-    };
+    // return the array
+    return {
+        separator: separator,
+        levels: levels,
+        scope: scope,
+        debug: debug
+    }
+},
+
+// -- show the sidebar
+usingSidebar = (
+    window.$docsify.hideSidebar ? false : true
+);
 
 
 // MARK: - main function
@@ -121,6 +130,16 @@ function autoHeaders( hook, vm ) {
         optionsScope        = autoHeadersOptions.scope,
         optionsDebug        = autoHeadersOptions.debug,
 
+        // -- debug: log message
+        log = ( message ) => {
+            optionsDebug ? console.log( message ) : '';
+        },
+
+        // -- debug: warn message
+        warn = ( message ) => {
+            optionsDebug ? console.warn( message ) : '';
+        },
+
         // safe heading range
         isHeadingInRange = ( value, min, max ) => {
             return value >= min && value <= max;
@@ -137,7 +156,7 @@ function autoHeaders( hook, vm ) {
                 if( isHeadingInRange( headingInputValue, 1, 6 ) ) {
                     output = `H1-${headingInputValue}`;
                 } else {
-                    return console.log(defaultErrors.headingLevelRange);
+                    return log( defaultErrors.headingLevelRange );
                 }
 
             // -- check if is object
@@ -148,7 +167,7 @@ function autoHeaders( hook, vm ) {
 
                 // -- start has to be less than finish
                 if( headingInputValue.start > headingInputValue.finish ) {
-                    return console.log( defaultErrors.headingLevelOrder );
+                    return log( defaultErrors.headingLevelOrder );
                 }
 
                 // -- start and finish need to be between 1-6 incl.
@@ -158,7 +177,7 @@ function autoHeaders( hook, vm ) {
                 ) {
                     output = `H${ headingInputValue.start }-${ headingInputValue.finish }`;
                 } else {
-                    return console.log( defaultErrors.headingLevelRange );
+                    return log( defaultErrors.headingLevelRange );
                 }
             }
 
@@ -167,7 +186,6 @@ function autoHeaders( hook, vm ) {
 
         // save as constant
         optionsLevelRange = setHeadingRange(optionsLevel);
-
 
 
     // MARK: - before rendered to HTML
@@ -234,24 +252,80 @@ function autoHeaders( hook, vm ) {
     // MARK: - add the heading numbers
     hook.doneEach( () => {
 
+        // what scope to use
+        const scope = (
+            ( typeof optionsScope === 'string' ) ? optionsScope : 
+                ( typeof optionsScope === 'object' && optionsScope !== null ) ?
+                    optionsScope.body : null
+        );
+
+        // affecting the sidebar
+        const numberSidebar = (
+            ( typeof optionsScope === 'object' && optionsScope !== null ) ?
+                optionsScope.sidebar : false
+        );
+
+        // validate the entry
+        // -- scope
+        if( typeof scope !== 'string' ) {
+            return warn( defaultErrors.invalidScope );
+        }
+
+        // -- sidebar
+        if( typeof numberSidebar !== 'boolean' ) {
+            return warn( defaultErrors.invalidSidebar );
+        }
+
+        // work on the sidebar
+        if( numberSidebar && usingSidebar ) {
+
+            // -- get the heading value that the TOC is limited to
+            const maxHeadingLevel = (
+                ( window.$docsify.subMaxLevel < 1 || window.$docsify.subMaxLevel > 6 ) ? 
+                    6 : window.$docsify.subMaxLevel
+            )
+
+            // -- get the sidebar
+            const sidebar = document.querySelectorAll( 'div.sidebar-nav > ul' );
+
+
+
+       
+
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
         // set the scope of the auto numbering
-        const contentScope = document.querySelector( optionsScope );
+        const contentScope = document.querySelector( scope );
 
         // if scope doesnt exist
         // and we are dubugging
         if( !contentScope && optionsDebug ) {
-            return console.warn( defaultErrors.invalidScope );
+            return warn( defaultErrors.invalidScope );
         }
 
         // -- do we have the headers array
         if( getHeadingNumber === null ) {
-            return optionsDebug ? console.warn(defaultErrors.invalidStartValue ) : '';
+            return optionsDebug ? warn(defaultErrors.invalidStartValue ) : '';
 
         } else {
 
             // -- validate the array is all numeric
             if( getHeadingNumber.every( isNaN ) ) {
-                return optionsDebug ? console.warn( defaultErrors.nonNumericValue ) : '';
+                return optionsDebug ? warn( defaultErrors.nonNumericValue ) : '';
 
             } else {
 
@@ -336,17 +410,13 @@ function autoHeaders( hook, vm ) {
                         // add `1` to the array numbers
                         startingNumbers[elementLevel]++;
 
-
                         // reset all level below except for the first run
                         if (!firstRun[elementLevel]) {
-
-                            // callback
                             resetBelowLevels( elementLevel );
-
                         }
 
                         // set the first run to false
-                        firstRun[elementLevel] = false;
+                        firstRun[ elementLevel ] = false;
 
                         // loop through the headings
                         for (
@@ -358,14 +428,11 @@ function autoHeaders( hook, vm ) {
                             // if the loop number
                             // is less than the element number
                             // then generate the numbering text
-                            if (levelNumber <= elementLevel) {
+                            if( levelNumber <= elementLevel ) {
                                 numberText += startingNumbers[levelNumber] + optionsSeparator
 
                             } else {
-
-                                // go back to top
                                 continue;
-
                             }
 
                         }
@@ -373,14 +440,13 @@ function autoHeaders( hook, vm ) {
                         // add the number outside the heading
                         // -- keep the anchor links :)
                         element.innerHTML = numberText + ' ' + element.innerHTML.replace(/^[0-9\.\s]+/, '');
-
                     }
 
                 } else {
 
                     // log the error
                     return optionsDebug ?
-                        console.warn( defaultErrors.negativeNumbers ) : '';
+                        warn( defaultErrors.negativeNumbers ) : '';
                 }
             }
         }

@@ -24,7 +24,7 @@
 		// repo: 'https://github.com/markbattistella/docsify-autoHeaders',
 		coverpage: 'site/cover.md',
 		homepage: 'site/home.md',
-		// loadSidebar: false,
+		// loadSidebar: true,
 		// hideSidebar: true,
 		auto2top: true,
 		notFoundPage: 'site/404.md',
@@ -46,10 +46,13 @@
 			separator:	'decimal',
 			// levels:		'6',
             levels:     {
-                start:  '1',
-                finish: '4'
+                start:      '1',
+                finish:     '4'
             },
-			scope:		'#main',
+			scope:		{
+                body:       '#main',
+                sidebar:    true
+            },
 			debug:		true
 		}
 	}
