@@ -20,7 +20,7 @@
 
 	<script>
 	window.$docsify = {
-		// name: 'autoHeaders',
+		name: 'autoHeaders',
 		// repo: 'https://github.com/markbattistella/docsify-autoHeaders',
 		coverpage: 'site/cover.md',
 		homepage: 'site/home.md',
@@ -44,11 +44,11 @@
 		// plugin - autoHeaders
 		autoHeaders: {
 			separator:	'.',
-			levels:		5,
-            // levels: {
-            //     start: 1,
-            //     finish: 4
-            // },
+			// levels:		2,
+            levels: {
+                start: 2,
+                finish: 4
+            },
 			debug:		true
 		}
 	}
