@@ -22,23 +22,16 @@
 	window.$docsify = {
 		name: 'autoHeaders',
 		repo: 'https://github.com/markbattistella/docsify-autoHeaders',
-		coverpage: 'site/cover.md',
+		// coverpage: 'site/cover.md',
 		homepage: 'site/home.md',
+        loadNavbar: 'site/nav.md',
         hideSidebar: true,
         auto2top: true,
 		notFoundPage: 'site/404.md',
 		relativePath: true,
 		themeColor: 'var(--mb-theme-01)',
 		formatUpdated: '{DD}/{MM}/{YYYY} {HH}:{mm}',
-		autoFooter: {
-			name:			'@markbattistella',
-			url:			'https://github.com/markbattistella',
-			copyYear:		'2013',
-			policy:			'site/policy',
-			terms:			'site/terms',
-			cookies:		'site/cookies',
-			onBody:			true
-		},
+
 
 		// plugin - autoHeaders
 		autoHeaders: {
@@ -55,9 +48,6 @@
 
 	<!-- docsify-autoHeaders -->
     <script src="dist/docsify-autoHeaders.min.js"></script>
-
-	<!-- mbSidebarFooter -->
-	<script src="https://cdn.jsdelivr.net/npm/@markbattistella/docsify-sidebarfooter"></script>
 
 </body>
 </html>
