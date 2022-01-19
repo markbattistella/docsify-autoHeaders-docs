@@ -21,48 +21,44 @@
 	<script>
 	window.$docsify = {
 		name: 'autoHeaders',
-		// repo: 'https://github.com/markbattistella/docsify-autoHeaders',
+		repo: 'https://github.com/markbattistella/docsify-autoHeaders',
 		coverpage: 'site/cover.md',
 		homepage: 'site/home.md',
-		// loadSidebar: true,
-		// hideSidebar: true,
-		auto2top: true,
+        hideSidebar: true,
+        auto2top: true,
 		notFoundPage: 'site/404.md',
-		relativePath: false,
+		relativePath: true,
 		themeColor: 'var(--mb-theme-01)',
 		formatUpdated: '{DD}/{MM}/{YYYY} {HH}:{mm}',
-		// autoFooter: {
-		// 	name:			'@markbattistella',
-		// 	url:			'https://github.com/markbattistella',
-		// 	copyYear:		'2013',
-		// 	policy:			'site/policy',
-		// 	terms:			'site/terms',
-		// 	cookies:		'site/cookies',
-		// 	onBody:			true
-		// },
+		autoFooter: {
+			name:			'@markbattistella',
+			url:			'https://github.com/markbattistella',
+			copyYear:		'2013',
+			policy:			'site/policy',
+			terms:			'site/terms',
+			cookies:		'site/cookies',
+			onBody:			true
+		},
 
 		// plugin - autoHeaders
 		autoHeaders: {
 			separator:	'.',
-			// levels:		2,
-            levels: {
-                start: 2,
-                finish: 4
-            },
-			debug:		true
+            levels: 6,
+            sidebar: false,
+			debug: true
 		}
 	}
 	</script>
 
 	<!-- docsify.js -->
-	<script src="https://cdn.jsdelivr.net/npm/docsify/lib/docsify.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/docsify@latest"></script>
 
 	<!-- docsify-autoHeaders -->
 	<!-- <script src="https://unpkg.com/@markbattistella/docsify-autoheaders@latest"></script> -->
-    <script src="docsify-autoHeaders.js"></script>
+    <script src="dist/docsify-autoHeaders.min.js"></script>
 
 	<!-- mbSidebarFooter -->
-	<!-- <script src="https://cdn.jsdelivr.net/npm/@markbattistella/docsify-sidebarfooter"></script> -->
+	<script src="https://cdn.jsdelivr.net/npm/@markbattistella/docsify-sidebarfooter"></script>
 
 </body>
 </html>

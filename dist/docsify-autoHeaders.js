@@ -1,5 +1,5 @@
 /*
- * docsify-autoHeaders.js v5.0.0
+ * docsify-autoHeaders.js v6.0.0
  * -- https://markbattistella.github.io/docsify-autoHeaders/
  * -- Copyright (c) 2021 Mark Battistella (@markbattistella)
  * -- Licensed under MIT
@@ -12,12 +12,15 @@
 
 
 
+
+
 // MARK: - global values
 
 // -- default values
 const docsifyAutoHeaders = {
-    separator: 'dot',
+    separator: '',
     levels: 6,
+    sidebar: true,
     debug: false
 },
 
@@ -25,6 +28,7 @@ const docsifyAutoHeaders = {
     defaultErrors = {
         unknownError: 'AutoHeaders: something went massively wrong! Contact @markbattistella :/',
         configNotSet: 'AutoHeaders: config settings not set',
+        headingNumbersSet: 'AutoHeaders: the @autoHeaders: numbers are not set or are incorrectly formatted',
         headingLevelOrder: 'AutoHeaders: heading start level cannot be greater than finish level',
         headingLevelRange: 'AutoHeaders: heading levels need to be between 1-6',
         invalidStartValue: 'AutoHeaders: the "start" number is empty or null',
@@ -46,10 +50,20 @@ const docsifyAutoHeaders = {
                 docsifyAutoHeaders.levels : 6
         );
 
-        // -- are we outputting to console
-        let debug = (
-            docsifyAutoHeaders.debug === true ?
-                true : false
+        // -- are we affecting the sidebar
+        let sidebar = (
+
+            // -- if user has hidden sidebar no rendering
+            window.$docsify.hideSidebar ?
+
+                false :
+
+                // -- if not hiding sidebar
+                // -- user has said to render sidebar
+                // -- and not using a custom sidebar
+                docsifyAutoHeaders.sidebar === true && window.$docsify.loadSidebar == undefined ?
+
+                    true : false
         );
 
         // set some defaults
@@ -81,19 +95,20 @@ const docsifyAutoHeaders = {
                 break;
         }
 
+        // -- are we outputting to console
+        let debug = (
+            docsifyAutoHeaders.debug === true ?
+                true : false
+        );
+
         // return the array
         return {
             separator: separator,
             levels: levels,
+            sidebar: sidebar,
             debug: debug
         }
-    },
-
-    // show the sidebar
-    usingSidebar = (
-        // -- if we are hiding it then we're not using it
-        window.$docsify.hideSidebar ? false : true
-    );
+    };
 
 
 
@@ -116,26 +131,32 @@ function autoHeaders(hook, vm) {
         // create new variables
         optionsSeparator = autoHeadersOptions.separator,
         optionsLevel = autoHeadersOptions.levels,
+        optionsSidebar = autoHeadersOptions.sidebar,
         optionsDebug = autoHeadersOptions.debug,
 
-        // -- debug: log message
+        // debug: log message
         log = (message) => {
             optionsDebug ? console.log(message) : '';
         },
 
-        // -- debug: warn message
+        // debug: warn message
         warn = (message) => {
             optionsDebug ? console.warn(message) : '';
-        },
-
-        // -- debug: error message
-        error = (message) => {
-            optionsDebug ? console.error(message) : '';
         },
 
         // safe heading range
         isHeadingInRange = (value, min, max) => {
             return value >= min && value <= max;
+        },
+
+        // check if the array items are positive numbers
+        isPositiveNumber = (number) => (number >= 0),
+
+        // -- reset the numbering
+        resetBelowLevels = (currentLevel, headingStartingNumbers) => {
+            for (let i = +currentLevel + 1; i <= 6; i++) {
+                headingStartingNumbers[i] = -1;
+            }
         },
 
         // get the heading range from options
@@ -145,7 +166,7 @@ function autoHeaders(hook, vm) {
 
             // -- is it a string
             if (
-                typeof optionsLevel === 'string' || 
+                typeof optionsLevel === 'string' ||
                 typeof optionsLevel === 'number'
             ) {
 
@@ -156,14 +177,14 @@ function autoHeaders(hook, vm) {
 
                 } else {
 
-                    return log(defaultErrors.headingLevelRange);
+                    log(defaultErrors.headingLevelRange);
+                    return;
 
                 }
 
                 // -- check if is object
             } else if (
-                typeof optionsLevel === 'object' &&
-                optionsLevel !== null
+                typeof optionsLevel === 'object' && optionsLevel !== null
             ) {
 
                 // -- start has to be less than finish
@@ -178,7 +199,7 @@ function autoHeaders(hook, vm) {
                     isHeadingInRange(headingInputValue.start, 1, 6) &&
                     isHeadingInRange(headingInputValue.finish, 1, 6)
                 ) {
-                    // headingRegexRange = `H${headingInputValue.start}-${headingInputValue.finish}`;
+
                     headingStartRange = headingInputValue.start;
                     headingFinishRange = headingInputValue.finish;
 
@@ -202,13 +223,11 @@ function autoHeaders(hook, vm) {
 
 
     // MARK: - before rendered to HTML
+    // ------- get the first line to check if we're autoheadering
     hook.beforeEach((content) => {
 
-        // get the first 12 characters
-        const getFirstCharacters = content.slice(0, 12);
-
-        // check if beginning with the plugin key
-        if (getFirstCharacters === '@autoHeader:') {
+        // check first characters
+        if (content.startsWith('@autoHeader:')) {
 
             // get the first line of data
             const getFirstLine = content.split('\n')[0];
@@ -218,12 +237,12 @@ function autoHeaders(hook, vm) {
 
             // there is no data to continue
             if (
-                !getHeadingNumber || 
-                getHeadingNumber == null || 
-                getHeadingNumber == ''
+                !getHeadingNumber           ||
+                getHeadingNumber === null   ||
+                getHeadingNumber === ''
             ) {
 
-                getHeadingNumber = null;
+                return getHeadingNumber = null;
 
             } else {
 
@@ -234,7 +253,7 @@ function autoHeaders(hook, vm) {
                 if (getHeadingNumber.length > 6) {
 
                     // set the headerNumber to null
-                    getHeadingNumber = null;
+                    return getHeadingNumber = null;
 
                 } else {
 
@@ -245,16 +264,14 @@ function autoHeaders(hook, vm) {
                     )
                         .slice(0, 6)      // cut off after 6 items
                         .map(x => +x);    // map the Strings to Int
-                }
+                    }
+
+                    // -- run the script only if valid
+                    autoHeaderNumbering();
             }
 
             // return the cleaned content
             return content.replace(getFirstLine, '');
-
-        } else {
-
-            // set the headerNumber to null
-            getHeadingNumber = null;
         }
     });
 
@@ -262,40 +279,49 @@ function autoHeaders(hook, vm) {
 
 
 
-    // run after the HTML is rendered
-    hook.afterEach((html, next) => {
+    // -- custom function
+    function autoHeaderNumbering() {
 
-        // setup empty container
-        const container = document.createElement('div');
+         // -- do we have the headers array
+         if (getHeadingNumber === null) {
+            optionsDebug ? warn(defaultErrors.invalidStartValue) : '';
+            return;
+        }
 
-        // insert the old html into the container
-        container.innerHTML = html;
+        // -- validate the array is all numeric
+        if (getHeadingNumber.every(isNaN)) {
+            optionsDebug ? warn(defaultErrors.nonNumericValue) : '';
+            return;
+        }
 
-        // -- find all the headers
-        const contentHeaders = container.querySelectorAll(
-            'h1, h2, h3, h4, h5, h6'
-        );
 
-        // -- do we have the headers array
-        if (getHeadingNumber === null) {
+        // -- numbering on the sidebar
+        if (optionsSidebar) {
 
-            return optionsDebug ? warn(defaultErrors.invalidStartValue) : '';
-
-        } else {
-
-            // -- validate the array is all numeric
-            if (getHeadingNumber.every(isNaN)) {
-
-                return optionsDebug ? warn(defaultErrors.nonNumericValue) : '';
-
-            } else {
-
-                // check if the array items are positive numbers
-                const positiveNumber = (number) => (number >= 0);
+            // MARK: - before rendered to HTML
+            // ------- if were using the sidebar then number it here
+            hook.beforeEach((content) => {
 
                 // the numbers are all positive
-                if (getHeadingNumber.every(positiveNumber)) {
+                if (getHeadingNumber.every(isPositiveNumber)) {
 
+                    // -- what markdown we are looking for
+                    const levels = ['# ', '## ', '### ', '#### ', '##### ', '###### '];
+
+                    // -- get the line heading level
+                    const getLevel = (line) => {
+                        if (line.startsWith(levels[0])) return 1; //h1
+                        if (line.startsWith(levels[1])) return 2;
+                        if (line.startsWith(levels[2])) return 3;
+                        if (line.startsWith(levels[3])) return 4;
+                        if (line.startsWith(levels[4])) return 5;
+                        if (line.startsWith(levels[5])) return 6; //h6
+                    };
+
+                    // -- add each line as an array item
+                    let lines = content.split('\n');
+
+                    // -- set the starting values minus 1
                     const headingStartingNumbers = [
                         0,                       // null
                         getHeadingNumber[0] - 1, // h1
@@ -306,7 +332,7 @@ function autoHeaders(hook, vm) {
                         getHeadingNumber[5] - 1, // h6
                     ];
 
-                    // track the first run
+                    // track the first run for custom levels
                     let isThisFirstRun = [
                         true,                   // null
                         true, 	                // h1 run yet
@@ -317,12 +343,108 @@ function autoHeaders(hook, vm) {
                         true 	                // h6 run yet
                     ];
 
-                    // -- reset the numbering
-                    const resetBelowLevels = (currentLevel) => {
-                        for (let i = +currentLevel + 1; i <= 6; i++) {
-                            headingStartingNumbers[i] = 0;
+                    // -- search regex
+                    const headingRegex = new RegExp(
+                        `^#{${optionsLevelStart},${optionsLevelFinish}}\\s+.*`
+                    );
+
+                    // -- loop over lines
+                    for (var line in lines) {
+
+                        // -- some defaults
+                        let numberText = '';
+                        let heading = lines[line];
+
+                        // -- get the level number
+                        let level = getLevel(heading);
+
+                        //if not a header continue to next line
+                        if (level === undefined || !headingRegex.test(heading)) {
+                            continue;
                         }
-                    };
+
+                        // add `1` to the array numbers
+                        headingStartingNumbers[level]++;
+
+                        // reset all level below except for the first run
+                        if (!isThisFirstRun[level]) {
+                            resetBelowLevels(level, headingStartingNumbers);
+                        }
+
+                        // set the first run to false
+                        isThisFirstRun[level] = false;
+
+                        // loop through the headings
+                        for (var levelNumber = 1; levelNumber <= 6; levelNumber++) {
+                            if (levelNumber <= level) {
+
+                                numberText += headingStartingNumbers[levelNumber] + optionsSeparator
+
+                            } else {
+
+                                // -- exit out of numbering the sub
+                                continue;
+
+                            }
+                        }
+
+                        // -- prepend the numbering to the heading
+                        lines[line] = (
+                            levels[level - 1] +
+                            numberText +
+                            heading.substr(level, heading.length)
+                        );
+                    }
+
+                    // add the number outside the heading
+                    content = lines.join("\n");
+                }
+
+                // return the newly formatted data
+                return content;
+            });
+
+        } else {
+
+            // MARK: - before rendered to HTML
+            // ------- not using sidebar only body
+            hook.afterEach((html, next) => {
+
+                // setup empty container
+                const container = document.createElement('div');
+
+                // the numbers are all positive
+                if (getHeadingNumber.every(isPositiveNumber)) {
+
+                    // insert the old html into the container
+                    container.innerHTML = html;
+
+                    // -- find all the headers
+                    const contentHeaders = container.querySelectorAll(
+                        'h1, h2, h3, h4, h5, h6'
+                    );
+
+                    // -- set the starting values minus 1
+                    const headingStartingNumbers = [
+                        0,                       // null
+                        getHeadingNumber[0] - 1, // h1
+                        getHeadingNumber[1] - 1, // h2
+                        getHeadingNumber[2] - 1, // h3
+                        getHeadingNumber[3] - 1, // h4
+                        getHeadingNumber[4] - 1, // h5
+                        getHeadingNumber[5] - 1, // h6
+                    ];
+
+                    // track the first run for custom levels
+                    let isThisFirstRun = [
+                        true,                   // null
+                        true, 	                // h1 run yet
+                        true, 	                // h2 run yet
+                        true, 	                // h3 run yet
+                        true, 	                // h4 run yet
+                        true, 	                // h5 run yet
+                        true 	                // h6 run yet
+                    ];
 
                     // limit the heading tag number in search
                     const headingRegex = new RegExp(
@@ -330,7 +452,6 @@ function autoHeaders(hook, vm) {
                     );
 
                     // -- work on the titles
-                    // contentHeaders.forEach( (element ) => {
                     for (var contentItem in contentHeaders) {
 
                         // -- some defaults
@@ -350,7 +471,7 @@ function autoHeaders(hook, vm) {
 
                         // reset all level below except for the first run
                         if (!isThisFirstRun[elementLevel]) {
-                            resetBelowLevels(elementLevel);
+                            resetBelowLevels(elementLevel, headingStartingNumbers);
                         }
 
                         // set the first run to false
@@ -374,124 +495,12 @@ function autoHeaders(hook, vm) {
                         heading.innerHTML = numberText + ' ' + heading.innerHTML.replace(/^[0-9\.\s]+/, '');
                     }
                 }
-            }
-        }
 
-        // insert the newly formatted data into parser
-        next(container.innerHTML);
-    });
-
-
-
-
-
-    // MARK: - each time after the data is fully loaded
-    hook.doneEach(() => {
-
-        // -- are we using sidebar
-        if (usingSidebar) {
-
-            // -- get the navigation sidebar items
-            const sidebarList = document.querySelectorAll('div.sidebar-nav ul');
-
-            // -- for all the <ul> items
-            sidebarList.forEach( (listItem) => {
-
-                // set the previous item
-                let previousElement = listItem.previousElementSibling;
-
-                // exit if null
-                if( !previousElement ) return;
-
-                // if <ul> and previous was <li>
-                if(
-                    listItem.parentNode.nodeName.toLocaleUpperCase() == "UL" && 
-                    previousElement.nodeName.toLocaleUpperCase() == "LI" ) {
-                
-                    // -- move it into the previous
-                    previousElement.appendChild(listItem);
-                }
+                // insert the newly formatted data into parser
+                next(container.innerHTML);
             });
-
-
-
-
-
-
-            // -- get the elements
-            const sidebarListItemsH1 = document.querySelectorAll('div.sidebar-nav > ul > li');
-            const sidebarListItemsH2 = document.querySelectorAll('div.sidebar-nav > ul > li > ul > li');
-            const sidebarListItemsH3 = document.querySelectorAll('div.sidebar-nav > ul > li > ul > li > ul > li');
-            const sidebarListItemsH4 = document.querySelectorAll('div.sidebar-nav > ul > li > ul > li > ul > li > ul > li');
-            const sidebarListItemsH5 = document.querySelectorAll('div.sidebar-nav > ul > li > ul > li > ul > li > ul > li > ul > li');
-            const sidebarListItemsH6 = document.querySelectorAll('div.sidebar-nav > ul > li > ul > li > ul > li > ul > li > ul > li > ul > li');
-
-            // -- add the attributes
-            sidebarListItemsH1.forEach( item => { item.setAttribute("heading", "1"); });
-            sidebarListItemsH2.forEach( item => { item.setAttribute("heading", "2"); });
-            sidebarListItemsH3.forEach( item => { item.setAttribute("heading", "3"); });
-            sidebarListItemsH4.forEach( item => { item.setAttribute("heading", "4"); });
-            sidebarListItemsH5.forEach( item => { item.setAttribute("heading", "5"); });
-            sidebarListItemsH6.forEach( item => { item.setAttribute("heading", "6"); });
-
-
-
-            const sidebarListItems = document.querySelectorAll('div.sidebar-nav li');
-
-            const headingStartingNumbers = [
-                0,                       // null
-                getHeadingNumber[0] - 1, // h1
-                getHeadingNumber[1] - 1, // h2
-                getHeadingNumber[2] - 1, // h3
-                getHeadingNumber[3] - 1, // h4
-                getHeadingNumber[4] - 1, // h5
-                getHeadingNumber[5] - 1, // h6
-            ];
-
-            // sidebarListItems.forEach( (item) => {
-            for (var item in sidebarListItems) {
-
-                let numberText = '';
-                let heading = sidebarListItems[item];
-
-                // -- regex to match on
-                const headingRegex = new RegExp(
-                    `^([${optionsLevelStart}-${optionsLevelFinish}])$`
-                );
-                
-                // element does not match a heading regex
-                if( 
-                    !heading ||
-                    !heading.tagName ||
-                    !heading.getAttribute('heading').match(headingRegex)
-                ) continue;
-
-                // -- set the number value from the added attribute
-                const headingNumber = ( parseInt( heading.getAttribute('heading'), 10) || 0 );
-
-                // return the heading level number
-                headingStartingNumbers[ headingNumber ]++;
-
-                // loop from 1-6 (H1 to H6)
-                for( var levelNumber = 1; levelNumber <= 6; levelNumber++ ) {
-
-                    // -- if loop index less than attribute heading number
-                    if( levelNumber <= headingNumber ) {
-
-                        // -- add the number to the variable
-                        numberText += headingStartingNumbers[ levelNumber ] + optionsSeparator
-
-                    // -- exit out if out of range
-                    } else {
-                        continue;
-                    }
-                }
-
-                // add to the text
-                heading.querySelector('a').innerHTML = numberText + ' ' + heading.querySelector('a').innerHTML
-            }
         }
-    });
+    }
 }
 
 
